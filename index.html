@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Voxen - Chargement</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --yellow: #f5c518;
+        --text: #ffffff;
+        --muted: rgba(255, 255, 255, 0.6);
+        --line: rgba(255, 255, 255, 0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        color: var(--text);
+        font-family: "Rajdhani", "Segoe UI", sans-serif;
+        user-select: none;
+    }
+
+    /* Background: naruto.jpg at 35% on black, slow zoom */
+    .bg {
+        /* no "inset": GMod's Chromium is too old for it */
+        position: fixed;
+        top: -3%;
+        left: -3%;
+        width: 106%;
+        height: 106%;
+        background-image: url("naruto.jpg");
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        opacity: 0.35;
+        animation: zoom 40s ease-in-out infinite alternate;
+    }
+
+    @keyframes zoom {
+        from { transform: scale(1); }
+        to { transform: scale(1.08); }
+    }
+
+    .vignette {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+            radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.75) 100%),
+            linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 35%);
+    }
+
+    /* Header: logo + title, same placement as the start menu */
+    .header {
+        position: fixed;
+        left: 5.9vw;
+        top: 22.5vh;
+        display: flex;
+        align-items: center;
+        gap: 1.4vw;
+        animation: fadein 1.2s ease-out both;
+    }
+
+    .header .logo { height: 10.2vh; }
+    .header .titre { height: 9.2vh; }
+
+    /* Server info, top right */
+    .server {
+        position: fixed;
+        right: 5vw;
+        top: 6vh;
+        text-align: right;
+        animation: fadein 1.2s 0.2s ease-out both;
+    }
+
+    .server .label {
+        font-size: 1.4vh;
+        letter-spacing: 0.35em;
+        color: var(--muted);
+        text-transform: uppercase;
+    }
+
+    .server .value {
+        font-size: 2.4vh;
+        font-weight: 700;
+        margin-bottom: 1.4vh;
+    }
+
+    /* Tips, left side under the header */
+    .tip {
+        position: fixed;
+        left: 6vw;
+        top: 40vh;
+        width: 34vw;
+        padding-left: 1.2vw;
+        border-left: 2px solid var(--line);
+        animation: fadein 1.2s 0.4s ease-out both;
+    }
+
+    .tip .label {
+        font-size: 1.5vh;
+        letter-spacing: 0.35em;
+        color: var(--yellow);
+        font-weight: 700;
+        margin-bottom: 1vh;
+    }
+
+    .tip .text {
+        font-size: 2.5vh;
+        font-weight: 600;
+        line-height: 1.35;
+        transition: opacity 0.6s;
+    }
+
+    /* Bottom: status + progress bar */
+    .bottom {
+        position: fixed;
+        left: 5vw;
+        right: 5vw;
+        bottom: 7vh;
+    }
+
+    .status {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 1.2vh;
+    }
+
+    .status .main {
+        font-size: 2.4vh;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+    }
+
+    .status .file {
+        font-size: 1.6vh;
+        color: var(--muted);
+        max-width: 60vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 0.4vh;
+    }
+
+    .status .percent {
+        font-size: 4.4vh;
+        font-weight: 700;
+        color: var(--yellow);
+        line-height: 1;
+    }
+
+    .bar {
+        height: 0.8vh;
+        background: var(--line);
+        border-radius: 1vh;
+        overflow: hidden;
+    }
+
+    .bar .fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #c99a00, var(--yellow));
+        box-shadow: 0 0 1.5vh rgba(245, 197, 24, 0.6);
+        border-radius: 1vh;
+        transition: width 0.4s ease-out;
+    }
+
+    .files {
+        margin-top: 1vh;
+        font-size: 1.5vh;
+        color: var(--muted);
+        text-align: right;
+    }
+
+    @keyframes fadein {
+        from { opacity: 0; transform: translateY(1.5vh); }
+        to { opacity: 1; transform: none; }
+    }
+</style>
+</head>
+<body>
+    <div class="bg"></div>
+    <div class="vignette"></div>
+
+    <div class="header">
+        <img class="logo" src="voxen.png" alt="">
+        <img class="titre" src="titre.png" alt="">
+    </div>
+
+    <div class="server">
+        <div class="label">Carte</div>
+        <div class="value" id="map">rp_voxen_v1</div>
+        <div class="label">Joueurs max</div>
+        <div class="value" id="players">-</div>
+    </div>
+
+    <div class="tip">
+        <div class="label">ASTUCE</div>
+        <div class="text" id="tip"></div>
+    </div>
+
+    <div class="bottom">
+        <div class="status">
+            <div>
+                <div class="main" id="status">Connexion au serveur...</div>
+                <div class="file" id="file">&nbsp;</div>
+            </div>
+            <div class="percent" id="percent">0%</div>
+        </div>
+        <div class="bar"><div class="fill" id="fill"></div></div>
+        <div class="files" id="files">&nbsp;</div>
+    </div>
+
+    <audio id="music" src="soundtrack.wav" loop autoplay></audio>
+
+<script>
+    // Music volume (0.03 = 3%), multiplied by the player's GMod volume
+    var MUSIC_VOLUME = 0.03;
+
+    var TIPS = [
+        "Appuie sur F4 pour ouvrir ton arbre de compétences.",
+        "Le premium te permet de garder tes Kekkei Genkai quand tu reroll.",
+        "Rejoins notre Discord pour suivre les nouveautés : discord.gg/DD9yhySPaM",
+        "Change de Kekkei Genkai depuis la page KG du F4 (1000 Tokens).",
+        "Le combat se gagne aussi au chakra : surveille ta jauge.",
+        "Respecte le RP de ton village, le staff veille.",
+        "Tape /boost dans le chat pour gagner des FPS."
+    ];
+
+    var STATUS_FR = {
+        "Retrieving server info": "Récupération des infos du serveur...",
+        "Sending client info": "Envoi des infos du client...",
+        "Workshop Complete": "Workshop terminé",
+        "Client info sent!": "Infos envoyées !",
+        "Starting Lua...": "Démarrage du Lua...",
+        "Mounting Addons": "Montage des addons...",
+        "Loading Lua...": "Chargement du Lua..."
+    };
+
+    var el = function (id) { return document.getElementById(id); };
+    var iTotal = 0, iNeeded = 0;
+
+    // Rotating tips
+    var iTip = Math.floor(Math.random() * TIPS.length);
+    function NextTip() {
+        var t = el("tip");
+        t.style.opacity = 0;
+        setTimeout(function () {
+            iTip = (iTip + 1) % TIPS.length;
+            t.textContent = TIPS[iTip];
+            t.style.opacity = 1;
+        }, 600);
+    }
+    el("tip").textContent = TIPS[iTip];
+    setInterval(NextTip, 7000);
+
+    function SetProgress(fRatio) {
+        var p = Math.max(0, Math.min(100, Math.round(fRatio * 100)));
+        el("fill").style.width = p + "%";
+        el("percent").textContent = p + "%";
+    }
+
+    function UpdateFiles() {
+        if (iTotal <= 0) return;
+        var iDone = iTotal - iNeeded;
+        el("files").textContent = iDone + " / " + iTotal + " fichiers";
+        SetProgress(iDone / iTotal);
+    }
+
+    // ---- Functions called by Garry's Mod ----
+
+    function GameDetails(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language) {
+        if (mapname) el("map").textContent = mapname;
+        if (maxplayers) el("players").textContent = maxplayers;
+
+        var music = el("music");
+        var fGameVolume = (typeof volume === "number") ? volume : 1;
+        music.volume = Math.max(0, Math.min(1, MUSIC_VOLUME * fGameVolume));
+        music.play && music.play();
+    }
+
+    function SetFilesTotal(total) {
+        iTotal = total;
+        UpdateFiles();
+    }
+
+    function SetFilesNeeded(needed) {
+        iNeeded = needed;
+        UpdateFiles();
+    }
+
+    function DownloadingFile(fileName) {
+        el("status").textContent = "Téléchargement...";
+        el("file").textContent = fileName;
+    }
+
+    function SetStatusChanged(status) {
+        // Recent GMod: "17/111 (18.1 MB) - sound/voxen/soundtrack.wav is downloading"
+        var m = /^(\d+)\/(\d+)\s*(\(([^)]*)\))?\s*-\s*(.+?) is downloading/.exec(status);
+        if (m) {
+            var iDone = Math.max(parseInt(m[1], 10) - 1, 0), iAll = parseInt(m[2], 10);
+            el("status").textContent = "Téléchargement" + (m[4] ? " (" + m[4] + " restants)" : "") + "...";
+            el("file").textContent = m[5];
+            el("files").textContent = iDone + " / " + iAll + " fichiers";
+            if (iAll > 0) SetProgress(iDone / iAll);
+            return;
+        }
+
+        var sText = STATUS_FR[status] || status;
+        el("status").textContent = sText;
+        el("file").innerHTML = "&nbsp;";
+
+        if (status === "Sending client info") SetProgress(1);
+    }
+
+    el("music").volume = MUSIC_VOLUME;
+</script>
+</body>
+</html>
